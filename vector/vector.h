@@ -46,12 +46,8 @@ class vector {
   }
 
   ~vector() noexcept { // O(N) nothrow
-    if (data_) {
-      for (size_t i = size_; i > 0; i--) {
-        data_[i - 1].~T();
-      }
-      operator delete(data_);
-    }
+    clear();
+    operator delete(data_);
   }
 
   T &operator[](size_t i) noexcept { // O(1) nothrow
@@ -129,10 +125,9 @@ class vector {
   }
 
   void clear() noexcept { // O(N) nothrow
-    for (size_t i = size_; i > 0; i--) {
-      data_[i - 1].~T();
+    while (size_) {
+      pop_back();
     }
-    size_ = 0;
   }
 
   void swap(vector &other) noexcept { // O(1) nothrow
@@ -160,17 +155,10 @@ class vector {
 
   iterator insert(const_iterator pos, T const &val) { // O(N) weak
     size_t posInd = pos - data_;
-    if (posInd == size_) {
-      push_back(val);
-      return data_ + size_;
-    }
-    increase_capacity();
-    new(data_ + size_)  T(data_[size_ - 1]);
+    push_back(val);
     for (size_t i = size_ - 1; i != posInd; i--) {
-      data_[i] = data_[i - 1];
+      std::swap(data_[i], data_[i - 1]);
     }
-    size_++;
-    data_[posInd] = val;
     return begin() + posInd;
   }
 
@@ -183,10 +171,9 @@ class vector {
     for (size_t i = first - data_; i < size_ - delta; i++) {
       data_[i] = data_[i + delta];
     }
-    for (size_t i = size_; i-- > size_ - delta;) {
-      data_[i].~T();
+    while (delta--) {
+      pop_back();
     }
-    size_ -= delta;
     return const_cast<iterator>(first);
   }
 
