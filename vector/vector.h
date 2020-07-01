@@ -16,104 +16,102 @@ class vector {
     size_ = 0;
   }
 
-  vector(vector const &other) {
-    T *newData = nullptr;
+  vector(vector const &other) { // O(N) strong
+    T *new_data = nullptr;
     if (other.data_ && other.size() != 0) {
-      newData = static_cast<T *>(operator new(other.size() * sizeof(T)));
+      new_data = static_cast<T *>(operator new(other.size() * sizeof(T)));
     }
     size_t i = 0;
     try {
       for (; i < other.size(); i++) {
-        new(newData + i) T();
-        newData[i] = other[i];
+        new(new_data + i) T(other[i]);
       }
     }
     catch (...) {
       while (i--) {
-        newData[i].~T();
+        new_data[i].~T();
       }
-      operator delete(newData);
+      operator delete(new_data);
       throw;
     }
-    data_ = newData;
+    data_ = new_data;
     size_ = other.size();
     capacity_ = other.size();
-  }// O(N) strong
+  }
 
-  vector &operator=(vector const &other) {
+  vector &operator=(vector const &other) { // O(N) strong, swap-trick
     vector tmp(other);
     swap(tmp);
     return *this;
-  } // O(N) strong, swap-trick
+  }
 
-  ~vector() noexcept {
+  ~vector() noexcept { // O(N) nothrow
     if (data_) {
-      for (size_t i = size_; i--;) {
-        data_[i].~T();
+      for (size_t i = size_; i > 0; i--) {
+        data_[i - 1].~T();
       }
       operator delete(data_);
     }
-  } // O(N) nothrow
+  }
 
-  T &operator[](size_t i) noexcept {
+  T &operator[](size_t i) noexcept { // O(1) nothrow
     return data_[i];
-  } // O(1) nothrow
+  }
 
-  T const &operator[](size_t i) const noexcept {
+  T const &operator[](size_t i) const noexcept { // O(1) nothrow
     return data_[i];
-  } // O(1) nothrow
+  }
 
-  T *data() noexcept {
+  T *data() noexcept { // O(1) nothrow
     return data_;
-  }// O(1) nothrow
+  }
 
-  T const *data() const noexcept {
+  T const *data() const noexcept { // O(1) nothrow
     return data_;
-  }// O(1) nothrow
+  }
 
-  size_t size() const noexcept {
+  size_t size() const noexcept { // O(1) nothrow
     return size_;
-  }// O(1) nothrow
+  }
 
-  T &front() noexcept {
+  T &front() noexcept { // O(1) nothrow
     return data_[0];
-  }// O(1) nothrow
+  }
 
-  T const &front() const noexcept {
+  T const &front() const noexcept { //O(1) nothrow
     return data_[0];
-  }//O(1) nothrow
+  }
 
-  T &back() noexcept {
+  T &back() noexcept { // O(1) nothrow
     return data_[size_ - 1];
-  }// O(1) nothrow
+  }
 
-  T const &back() const noexcept {
+  T const &back() const noexcept { // O(1) nothrow
     return data_[size_ - 1];
-  }// O(1) nothrow
+  }
 
-  void push_back(T const &val) {
-    T valSaved = val;
+  void push_back(T const &val) { // O(1)* strong
     if (size_ == capacity_) {
-      push_back_realloc(valSaved);
+      push_back_realloc(val);
     } else {
-      new(data_ + size_) T(valSaved);
+      new(data_ + size_) T(val);
       size_++;
     }
-  }// O(1)* strong
+  }
 
-  void pop_back() noexcept {
+  void pop_back() noexcept { // O(1) nothrow
     data_[--size_].~T();
-  }// O(1) nothrow
+  }
 
-  bool empty() const noexcept {
+  bool empty() const noexcept { // O(1) nothrow
     return size_ == 0;
-  }// O(1) nothrow
+  }
 
-  size_t capacity() const noexcept {
+  size_t capacity() const noexcept { // O(1) nothrow
     return capacity_;
-  }// O(1) nothrow
+  }
 
-  void reserve(size_t new_size) {
+  void reserve(size_t new_size) { // O(N) strong, swap-trick
     if (new_size <= capacity_) return;
     vector<T> tmp;
     tmp.data_ = static_cast<T *>(operator new(new_size * sizeof(T)));
@@ -122,44 +120,45 @@ class vector {
       tmp.push_back(data_[i]);
     }
     swap(tmp);
-  }// O(N) strong, swap-trick
-  void shrink_to_fit() {
+  }
+
+  void shrink_to_fit() { // O(N) strong, swap-trick
     if (size_ == capacity_) return;
     vector<T> tmp(*this);
     swap(tmp);
-  }// O(N) strong, swap-trick
+  }
 
-  void clear() noexcept {
-    for (size_t i = 0; i < size_; i++) {
-      data_[i].~T();
+  void clear() noexcept { // O(N) nothrow
+    for (size_t i = size_; i > 0; i--) {
+      data_[i - 1].~T();
     }
     size_ = 0;
-  }   // O(N) nothrow
+  }
 
-  void swap(vector &other) noexcept {
+  void swap(vector &other) noexcept { // O(1) nothrow
     using std::swap;
     swap(data_, other.data_);
     swap(size_, other.size_);
     swap(capacity_, other.capacity_);
-  }// O(1) nothrow
+  }
 
-  iterator begin() noexcept {
+  iterator begin() noexcept { // O(1) nothrow
     return data_;
-  }// O(1) nothrow
+  }
 
-  iterator end() noexcept {
+  iterator end() noexcept { // O(1) nothrow
     return data_ + size_;
-  }// O(1) nothrow
+  }
 
-  const_iterator begin() const noexcept {
+  const_iterator begin() const noexcept { // O(1) nothrow
     return data_;
-  }// O(1) nothrow
+  }
 
-  const_iterator end() const noexcept {
+  const_iterator end() const noexcept { // O(1) nothrow
     return data_ + size_;
-  }// O(1) nothrow
+  }
 
-  iterator insert(const_iterator pos, T const &val) {
+  iterator insert(const_iterator pos, T const &val) { // O(N) weak
     size_t posInd = pos - data_;
     if (posInd == size_) {
       push_back(val);
@@ -173,13 +172,13 @@ class vector {
     size_++;
     data_[posInd] = val;
     return begin() + posInd;
-  }// O(N) weak
+  }
 
-  iterator erase(const_iterator pos) {
+  iterator erase(const_iterator pos) { // O(N) weak
     return erase(pos, pos + 1);
-  }// O(N) weak
+  }
 
-  iterator erase(const_iterator first, const_iterator last) {
+  iterator erase(const_iterator first, const_iterator last) { // O(N) weak
     size_t delta = last - first;
     for (size_t i = first - data_; i < size_ - delta; i++) {
       data_[i] = data_[i + delta];
@@ -189,16 +188,16 @@ class vector {
     }
     size_ -= delta;
     return const_cast<iterator>(first);
-  }// O(N) weak
+  }
 
  private:
-  void increase_capacity() {
+  void increase_capacity() { // O(n) strong
     if (size_ >= capacity_) {
-      reserve(capacity_ == 0 ? 1 : capacity_ * 2);
+      reserve(calc_new_capacity());
     }
-  }// O(n) strong
+  }
 
-  void push_back_realloc(T const &val) {
+  void push_back_realloc(T const &val) { // O(1)* strong
     size_t new_capacity = calc_new_capacity();
     T *tmp = static_cast<T *>(operator new(new_capacity * sizeof(T)));
     size_t new_size = size_ + 1;
@@ -210,8 +209,8 @@ class vector {
       }
     }
     catch (...) {
-      for (i++; i < new_size; i++) {
-        tmp[i].~T();
+      for (size_t j = i + 1; j < new_size; j++) {
+        tmp[j].~T();
       }
       operator delete(tmp);
       throw;
@@ -221,7 +220,7 @@ class vector {
     data_ = tmp;
     size_ = new_size;
     capacity_ = new_capacity;
-  }// O(1)* strong
+  }
 
   size_t calc_new_capacity() {
     return capacity_ == 0 ? 1 : capacity_ * 2;
