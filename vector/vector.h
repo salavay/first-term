@@ -178,35 +178,14 @@ class vector {
   }
 
  private:
-  void increase_capacity() { // O(n) strong
-    if (size_ >= capacity_) {
-      reserve(calc_new_capacity());
+  void push_back_realloc(T const &val) { // O(1)* strong, swap-trick
+    vector<T> tmp;
+    tmp.reserve(calc_new_capacity());
+    for (int i = 0; i < size_; i++) {
+      tmp.push_back(data_[i]);
     }
-  }
-
-  void push_back_realloc(T const &val) { // O(1)* strong
-    size_t new_capacity = calc_new_capacity();
-    T *tmp = static_cast<T *>(operator new(new_capacity * sizeof(T)));
-    size_t new_size = size_ + 1;
-    size_t i = size_;
-    try {
-      new(tmp + i) T(val);
-      while (i--) {
-        new(tmp + i) T(data_[i]);
-      }
-    }
-    catch (...) {
-      for (size_t j = i + 1; j < new_size; j++) {
-        tmp[j].~T();
-      }
-      operator delete(tmp);
-      throw;
-    }
-    clear();
-    operator delete(data_);
-    data_ = tmp;
-    size_ = new_size;
-    capacity_ = new_capacity;
+    tmp.push_back(val);
+    swap(tmp);
   }
 
   size_t calc_new_capacity() {
