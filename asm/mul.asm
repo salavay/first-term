@@ -1,10 +1,10 @@
-        %define       answer r8
-        %define       carry r9
-        %define       i r10
-        %define       j r11
-        %define       tmp r12
-        %define       length r13
-        section         .text
+                %define         answer r8
+                %define         carry r9
+                %define         i r10
+                %define         j r11
+                %define         tmp r12
+                %define         length r13
+                section         .text
 
                 global          _start
 _start:
@@ -31,88 +31,88 @@ _start:
                 jmp             exit
 
 ; muls two long number
-;    rdi -- address of multiplier #1 (long number)
-;    rsi -- address of multiplier #2 (long number)
-;    rcx -- length of long numbers in qwords
+;rdi -- address of multiplier #1 (long number)
+;rsi -- address of multiplier #2 (long number)
+;rcx -- length of long numbers in qwords
 ; result:
-;    result is written to r8(answer)
-;    result's length = rcx * 2
+;result is written to r8(answer)
+;result's length = rcx * 2
 mul_long_long:
-        push             rdi
-        push             rsi
-        push             rcx
-        push             carry
-        push             i
-        push             j
-        push             tmp
-        
-        lea              length, [8 * rcx]
- 
-        clc
- 
-        xor              i, i
+                push            rdi
+                push            rsi
+                push            rcx
+                push            carry
+                push            i
+                push            j
+                push            tmp
+
+                lea             length, [8 * rcx]
+
+                clc
+
+                xor             i, i
 .loop_first:
-        xor              carry, carry
-        xor              j, j
+                xor             carry, carry
+                xor             j, j
 .loop_second:
-        xor              tmp, tmp
-        add              tmp, carry
-        xor              carry, carry
-        
-        push             rdi
-        push             r14
-        add              rdi, i
-        mov              r14, rsi
-        add              r14, j
-        mov              rax, [rdi]
-        mov              r14, [r14]
-        mul              r14
-        pop              r14
-        pop              rdi
-        ;first[i] * second[j]
-        
-        clc
-        add              carry, rdx
-        add              tmp, rax
-        adc              carry, 0
-        ;tmp += first[i] * second[j]
-       
-        push             answer
-        add              answer, i
-        add              answer, j
-        clc
-        add              tmp, [answer]
-        adc              carry, 0
-        ;tmp += answer[i + j]
-        
-        mov              [answer], tmp
-        pop              answer
-        ;answer[i + j] = tmp
-        
-        lea              j, [j + 8]
-        cmp              j, length
-        jnz              .loop_second
-       
-        push             answer
-        add              answer, length
-        add              answer, i
-        mov              [answer], carry
-        pop              answer
-        ;answer[length + i] += carry
-        
-        lea              i, [i + 8]
-        cmp              i, length
-        jnz              .loop_first
- 
- 
-        pop              tmp
-        pop              j
-        pop              i
-        pop              carry
-        pop              rcx
-        pop              rsi
-        pop              rdi
-        ret
+                xor             tmp, tmp
+                add             tmp, carry
+                xor             carry, carry
+
+                push            rdi
+                push            r14
+                add             rdi, i
+                mov             r14, rsi
+                add             r14, j
+                mov             rax, [rdi]
+                mov             r14, [r14]
+                mul             r14
+                pop             r14
+                pop             rdi
+                ;first[i] * second[j]
+
+                clc
+                add             carry, rdx
+                add             tmp, rax
+                adc             carry, 0
+                ;tmp += first[i] * second[j]
+
+                push            answer
+                add             answer, i
+                add             answer, j
+                clc
+                add             tmp, [answer]
+                adc             carry, 0
+                ;tmp += answer[i + j]
+
+                mov             [answer], tmp
+                pop             answer
+                ;answer[i + j] = tmp
+
+                lea             j, [j + 8]
+                cmp             j, length
+                jnz             .loop_second
+
+                push            answer
+                add             answer, length
+                add             answer, i
+                mov             [answer], carry
+                pop             answer
+                ;answer[length + i] += carry
+
+                lea             i, [i + 8]
+                cmp             i, length
+                jnz             .loop_first
+
+
+                pop             tmp
+                pop             j
+                pop             i
+                pop             carry
+                pop             rcx
+                pop             rsi
+                pop             rdi
+                ret
 
 ; adds 64-bit number to long number
 ;    rdi -- address of summand #1 (long number)
