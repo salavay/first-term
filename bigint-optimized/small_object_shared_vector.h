@@ -19,15 +19,54 @@ class small_object_shared_vector {
     is_small = false;
   }
 
+  void swap_data(small_object_shared_vector<T> &a, small_object_shared_vector<T> &b) {
+    shared_vector<T> tmp(b.dynamic_data_);
+    b.dynamic_data_.~shared_vector();
+    safe_copy_static(a.static_data_, b.static_data_, a.size_);
+    new(&a.dynamic_data_) shared_vector<T>(tmp);
+  }
+
+  void safe_copy_static(T const *from, T *to, size_t const size) {
+    size_t i = 0;
+    try {
+      for (; i < size; i++) {
+        new(to + i) T(from[i]);
+      }
+    } catch (...) {
+      for (; i > 0; i--) {
+        to[i].~T();
+      }
+      clear_static(to, i, 0);
+      throw;
+    }
+  }
+
+  void safe_initialize_with_static(T *to, size_t const &first, size_t const &last, T val) {
+    size_t i = first;
+    try {
+      for (; i < last; i++) {
+        new(to + i) T(val);
+      }
+    } catch (...) {
+      clear_static(to, i, first);
+      throw;
+    }
+  }
+
+  void clear_static(T *to, size_t const &first, size_t const &last) {
+    size_t i = first;
+    while (i-- && i > last) {
+      to[i].~T();
+    }
+  }
+
  public:
   small_object_shared_vector() : size_(0), is_small(true) {}
 
   small_object_shared_vector(small_object_shared_vector<T> const &other)
       : size_(other.size_), is_small(other.is_small) {
     if (is_small) {
-      for (size_t i = 0; i < size_; i++) {
-        new(static_data_ + i) T(other.static_data_[i]);
-      }
+      safe_copy_static(other.static_data_, static_data_, size_);
     } else {
       new(&dynamic_data_) shared_vector<T>(other.dynamic_data_);
     }
@@ -68,11 +107,17 @@ class small_object_shared_vector {
       using std::swap;
       small_object_shared_vector<T> tmp(other);
       if (is_small == tmp.is_small) {
-        is_small ? swap(static_data_, tmp.static_data_) :
-        swap(dynamic_data_, tmp.dynamic_data_);
+        if (is_small) {
+          swap(static_data_, tmp.static_data_);
+        } else {
+          swap(dynamic_data_, tmp.dynamic_data_);
+        }
       } else {
-        is_small ? swap_data(*this, tmp) :
-        swap_data(tmp, *this);
+        if (is_small) {
+          swap_data(*this, tmp);
+        } else {
+          swap_data(tmp, *this);
+        }
       }
       swap(is_small, tmp.is_small);
       swap(size_, tmp.size_);
@@ -85,8 +130,8 @@ class small_object_shared_vector {
       if (size_ == MAX_SMALL_SIZE) {
         from_small_to_big();
       } else {
+        new(static_data_ + size_) T(val);
         size_++;
-        new(static_data_ + size_ - 1) T(val);
         return;
       }
     }
@@ -103,7 +148,7 @@ class small_object_shared_vector {
     size_--;
   }
 
-  void resize(size_t const &n) {
+  void resize(size_t const &n, T val) {
     if (size_ == n) {
       return;
     }
@@ -112,11 +157,9 @@ class small_object_shared_vector {
         from_small_to_big();
       }
       if (is_small) {
-        for (size_t i = size_; i < size_ + n; i++) {
-          new(static_data_ + i) T();
-        }
+        safe_initialize_with_static(static_data_, size_, size_ + n, val);
       } else {
-        dynamic_data_.resize(n);
+        dynamic_data_.resize(n, val);
       }
     } else {
       if (is_small) {
@@ -124,28 +167,14 @@ class small_object_shared_vector {
           static_data_[i - 1].~T();
         }
       } else {
-        dynamic_data_.resize(n);
+        dynamic_data_.resize(n, val);
       }
     }
     size_ = n;
   }
 
-  void resize(size_t const &n, T const &val) {
-    size_t saved_size = size_;
-    resize(n);
-    if (n <= saved_size) {
-      return;
-    }
-    if (is_small) {
-      for (size_t i = saved_size; i < size_; i++) {
-        new(static_data_ + i) T(val);
-      }
-    } else {
-      for (size_t i = saved_size; i < size_; i++) {
-        dynamic_data_[i] = val;
-      }
-    }
-
+  void resize(size_t const &n) {
+    resize(n, T());
   }
 
   T const &back() const {
@@ -170,15 +199,6 @@ class small_object_shared_vector {
 
   size_t size() const {
     return size_;
-  }
-
-  void swap_data(small_object_shared_vector<T> &a, small_object_shared_vector<T> &b) {
-    shared_vector<T> tmp(b.dynamic_data_);
-    b.dynamic_data_.~shared_vector();
-    for (size_t i = 0; i < a.size_; i++) {
-      new(b.static_data_ + i) T(a.static_data_[i]);
-    }
-    new(&a.dynamic_data_) shared_vector<T>(tmp);
   }
 };
 

@@ -32,8 +32,7 @@ class shared_vector {
     data_ = new data_type(std::vector<T>());
   }
 
-  shared_vector(shared_vector<T> const &other) {
-    data_ = other.data_;
+  shared_vector(shared_vector<T> const &other): data_(other.data_) {
     data_->ref_counter++;
   }
 
@@ -73,9 +72,9 @@ class shared_vector {
     data_->data_impl.pop_back();
   }
 
-  void resize(size_t n) {
+  void resize(size_t n, T val) {
     own();
-    return data_->data_impl.resize(n);
+    return data_->data_impl.resize(n, val);
   }
 
   T const &back() const {
