@@ -26,22 +26,19 @@ class small_object_shared_vector {
     new(&a.dynamic_data_) shared_vector<T>(tmp);
   }
 
-  void safe_copy_static(T const *from, T *to, size_t const size) {
+  void safe_copy_static(T const *from, T *to, size_t size) {
     size_t i = 0;
     try {
       for (; i < size; i++) {
         new(to + i) T(from[i]);
       }
     } catch (...) {
-      for (; i > 0; i--) {
-        to[i].~T();
-      }
       clear_static(to, i, 0);
       throw;
     }
   }
 
-  void safe_initialize_with_static(T *to, size_t const &first, size_t const &last, T val) {
+  void safe_initialize_with_static(T *to, size_t first, size_t last, T const &val) {
     size_t i = first;
     try {
       for (; i < last; i++) {
@@ -53,10 +50,9 @@ class small_object_shared_vector {
     }
   }
 
-  void clear_static(T *to, size_t const &first, size_t const &last) {
-    size_t i = first;
-    while (i-- && i > last) {
-      to[i].~T();
+  void clear_static(T *to, size_t first, size_t last) {
+    for (size_t i = first; i > last + 1; i--) {
+      to[i - 1].~T();
     }
   }
 
@@ -86,7 +82,7 @@ class small_object_shared_vector {
     }
   }
 
-  T &operator[](size_t const &i) {
+  T &operator[](size_t i) {
     if (is_small) {
       return static_data_[i];
     } else {
@@ -94,7 +90,7 @@ class small_object_shared_vector {
     }
   }
 
-  const T &operator[](size_t const &i) const {
+  const T &operator[](size_t i) const {
     if (is_small) {
       return static_data_[i];
     } else {
@@ -148,7 +144,7 @@ class small_object_shared_vector {
     size_--;
   }
 
-  void resize(size_t const &n, T val) {
+  void resize(size_t n, T const &val = T()) {
     if (size_ == n) {
       return;
     }
@@ -171,10 +167,6 @@ class small_object_shared_vector {
       }
     }
     size_ = n;
-  }
-
-  void resize(size_t const &n) {
-    resize(n, T());
   }
 
   T const &back() const {
